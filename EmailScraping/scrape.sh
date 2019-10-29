@@ -21,8 +21,8 @@ while ((i <= 22456)); do
 	CURLRET=$?
 
 	if [ $CURLRET -ne 0 ]; then
-		rm -rf *
 		echo " * Failed to download: cURL returned $CURLRET. See email/$i.stderr for more information." | tee -a $FD_PATH
+		read -n1 -r -p "Press any key to continue..." key
 		continue
 	fi
 
