@@ -9,6 +9,7 @@ library(SnowballC)
 library(topicmodels)
 
 emails <- read_csv('emails.csv')
+stopwords.df <- read.table('stopwords_en.txt', stringsAsFactors = FALSE)
 
 emailbodies <- emails$body
 docs <- Corpus(VectorSource(emailbodies)) # create corpus from vector of email bodies
@@ -20,17 +21,21 @@ docs <- tm_map(docs, toSpace, '-')
 docs <- tm_map(docs, toSpace, '\'')
 docs <- tm_map(docs, toSpace, "\"")
 docs <- tm_map(docs, toSpace, '\\.')
+docs <- tm_map(docs, toSpace, ':')
+docs <- tm_map(docs, toSpace, '@')
+docs <- tm_map(docs, toSpace, '/')
 
 # remove punctuation
 docs <- tm_map(docs, removePunctuation)
 #Strip digits
 docs <- tm_map(docs, removeNumbers)
-#remove stopwords
-#docs <- tm_map(docs, removeWords, stopwords('english'))
-#remove whitespace
-docs <- tm_map(docs, stripWhitespace)
 # to lower case
 docs <- tm_map(docs, tolower)
+#remove stopwords
+#docs <- tm_map(docs, removeWords, stopwords('english'))
+docs <- tm_map(docs, removeWords, stopwords.df[[1]])
+#remove whitespace
+docs <- tm_map(docs, stripWhitespace)
 #Good practice to check every now and then
 writeLines(as.character(docs[[30]]))
 #Stem document
@@ -41,8 +46,15 @@ docs <- tm_map(docs, stemDocument)
 #myDf <- data.frame(text = sapply(myTokensStemCompleted, paste, collapse = " "), stringsAsFactors = FALSE)
 myDf <- data.frame(text = sapply(docs, paste, collapse = " "), stringsAsFactors = FALSE)
 myDf <- cbind(emails$index, myDf)
-colnames(myDf) <- c("id", "text")
-myDf$id <- as.character(myDf$id)
+colnames(myDf) <- c("doc_id", "text")
+myDf$doc_id <- as.character(myDf$doc_id)
+remove <- which(nchar(myDf$text) == 0)
+myDf <- myDf[-remove,]
+remove <- which(myDf$text == 'NA')
+myDf <- myDf[-remove,]
+
+
+################################################################################
 
 mallet.instances <- mallet.import(myDf$id, myDf$text, "stopwords_en.txt", 
                                   FALSE, token.regexp="[\\p{L}']+")
@@ -88,3 +100,23 @@ for(i in 1:num.topics){
   topic.top.words <- mallet.top.words(topic.model, topic.words.m[i,], num.top.words)
   wordcloud(topic.top.words$words, topic.top.words$weights, c(4,.8), rot.per=0, random.order=F)
 }
+
+##################################################################################
+# GUHA
+topic.dtm <- DocumentTermMatrix(Corpus(DataframeSource(myDf)))
+#rowSum <- apply(topic.dtm , 1, sum)
+#topic.dtm <- topic.dtm[rowSum> 0, ]
+ap_lda <- LDA(topic.dtm, k = 2, control = list(seed = 1234))
+ap_topics <- tidy(ap_lda, matrix = "beta")
+ap_top_terms <- ap_topics %>%
+  group_by(topic) %>%
+  top_n(10, beta) %>%
+  ungroup() %>%
+  arrange(topic, -beta)
+ap_top_terms %>%
+  mutate(term = reorder_within(term, beta, topic)) %>%
+  ggplot(aes(term, beta, fill = factor(topic))) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~ topic, scales = "free") +
+  coord_flip() +
+  scale_x_reordered()

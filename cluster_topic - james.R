@@ -14,6 +14,7 @@ stopwords.df <- read.table('stopwords_en.txt', stringsAsFactors = FALSE)
 data.df <- read.table('email-dnc-corecipient.edges', skip = 1)
 email.df <- read_csv('emails.csv')
 email.df <- na.omit(email.df)
+header.df <- read_csv('headers.csv')
 
 data.graph <- graph.data.frame(data.df)
 
@@ -81,5 +82,6 @@ for (j in 1:length(com$csize))
     facet_wrap(~ topic, scales = "free") +
     coord_flip() +
     scale_x_reordered() + 
-    labs(title=paste("cluster ", j))
+    labs(title=paste("cluster ", j)) +
+    ggsave(paste("cluster_",j,".png"))
 }
