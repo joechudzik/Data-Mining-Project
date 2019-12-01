@@ -5,7 +5,7 @@
 # curl -OJL https://wikileaks.org/dnc-emails//get/<id-here>
 # IDs range from [1, 22456]
 
-i=18781
+i=0
 r=$RETRY_COUNT
 
 while ((i <= 22456)); do
@@ -19,7 +19,5 @@ while ((i <= 22456)); do
 		read -n1 -r -p "Press any key to continue..." key
 		continue
 	fi
-
-	# sleep 7
 
 done

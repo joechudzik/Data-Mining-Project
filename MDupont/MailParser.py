@@ -1,122 +1,166 @@
 import mailparser
+from email.parser import BytesParser
+from email_reply_parser import EmailReplyParser
+from email import policy
 import glob
 import email
 import string
 from collections import Counter
 import time
+import openpyxl
+import os
+import csv
+
+
+
+def tryWithDefault(cell, value, default):
+    try:
+        cell.value = value
+    except Exception as e:
+        cell.value = default
 
 def grabAddress(inputTuple):
     (_, recipientAddress) = inputTuple
     return recipientAddress
 
-def writeAsCSVLine(inputTuple):
-    (fromElem, toElem) = inputTuple
-    return fromElem + "," + toElem + "\n"
-
-def writeAsCSVLineWeighted(inputTriple):
-    ((fromElem, toElem), count) = inputTriple
-    return fromElem + "," + toElem + "," + str(count) + "\n"
-
-def removeDuplicates(pair):
-    (fromElem, toElem) = pair
+def removeDuplicates(edgeTuple):
+    (fromElem, toElem, emailValue) = edgeTuple
     return fromElem != toElem
 
-#useful for debugging without running through the entire email set.
-#targetFiles = targetFiles[0:20]
+
 
 start = time.time()
 
-targetFiles = glob.glob('email/*.eml')
-print(str(len(targetFiles)) + " files found.") 
+allEmails = glob.glob('emails/*.eml')
+#useful for debugging without running through the entire email set.
+# allEmails = allEmails[0:20]
 
-#Initialize lists to store parsed values
-bipartiteEdgeList = []                                                                              #type should be (str * str)
-unorderedBipartiteEdgeList = []                                                                     #type should be (str * str)
-emailNetworkEdgeList = []                                                                           #type should be (str * str)      
+#####################################################################################################################################
+#                              Initializing Excel workbook to store output in multiple sheets. 
+#####################################################################################################################################
+outputExcelWorkbook = openpyxl.Workbook()
+edgeSheet = outputExcelWorkbook.create_sheet("EdgeList")
+attributeSheet = outputExcelWorkbook.create_sheet("Attributes")
+unreadableEmails = outputExcelWorkbook.create_sheet("UnreadableEmails")
+
+edgeSheet.title = "EdgeList"
+attributeSheet.title = "Attributes"
+unreadableEmails.title = "UnreadableEmails"
+
+
+
+print(str(len(allEmails)) + " files found.") 
+emailNetworkEdgeList = []                                                                           #type should be (str * str * str)      
 unreadableEmailsList = []                                                                           #Useful metadata for us.
 emailAttributesList = []                                                                            #Not used yet, might be useful for timestamp information
 
-bipartiteEdgeListCsv = open("BipartiteEdgeList.csv","w")
-unorderedBipartiteEdgeListCsv = open("UnorderedBipartiteEdgeList.csv", "w")
-emailAttributesCsv = open("EmailAttributes.csv", "w")
-emailNetworkEdgeCsv = open("EmailNetworkEdgeList.csv", "w")
-unreadableEmailsCsv = open("UnreadableEmails.csv", "w")
 
-for thisFile in targetFiles:
+
+#####################################################################################################################################
+#                                    Parsing each email into To, From, Body, and Date
+#####################################################################################################################################
+for thisFile in allEmails:
     
-    trimmedFileName = thisFile[6:]                                                                  # Removing "email/" from the location, so the filename can be printed nicely.
+    email = os.path.basename(thisFile)                                                              #Removes path information
+    
+    #Extracting the head element of email body
+    with open(thisFile, 'rb') as fp:
+        msg = BytesParser(policy=policy.default).parse(fp)
+    try:
+        body = msg.get_body(preferencelist='plain').get_content()
+        #Grabbing only the head element of the email reply list.
+        body_msg = EmailReplyParser.read(body)
+        if len(body_msg.fragments) > 0:
+            body = body_msg.fragments[0].content
+            body = body.replace("\r", "")
+            body = body.replace("\n", " ")
+        else:
+            body = ""
+    except Exception as e:
+        body = ""
     mail = mailparser.parse_from_file(thisFile)
-    
+
+    # Handle From Address
     fromList = mail.from_
     if  len(fromList) == 0:
-        print(trimmedFileName + " had 0 \"From\" addresses - this email is likely unreadable" )
-        unreadableEmailsList.append(trimmedFileName + "\n")
+        outputLine = " had 0 \"From\" addresses - this email is likely unreadable"
+        print(email + outputLine)
+        unreadableEmailsList.append(email + "\n")
 
     elif len(fromList) > 1:
-        print(trimmedFileName + " had >1 \"From\" addresses - this email is likely unreadable" )
-        unreadableEmailsList.append(trimmedFileName + "\n")
+        outputLine = " had >1 \"From\" addresses - this email is likely unreadable"
+        print(email + outputLine)
+        unreadableEmailsList.append(email + outputLine + "\n")
     
     else:
         (_, senderAddress) = fromList[0]
         senderAddress = senderAddress.lower()
         recipientAddresses = map(grabAddress, mail.to)
         emailTime = mail.date
-        #message = mail.message
 
-        #Adding sender->email edge for bipartite graph
-        senderToEmailEdge = (senderAddress.lower(), trimmedFileName.lower())
-        bipartiteEdgeList.append(senderToEmailEdge)
-        unorderedBipartiteEdgeList.append(senderToEmailEdge)
-        #Write all attributes per email
-        # emailAttributesList.append(trimmedFileName + "," + emailTime.__str__)
-
-        for recipient in recipientAddresses:
-
-            #Adding all email->recipient edges for bipartite graph
-            emailToRecipientEdge = (trimmedFileName.lower(), recipient.lower())
-            bipartiteEdgeList.append(emailToRecipientEdge)
-
-            reversedEmailToRecipientEdge = (recipient.lower(), trimmedFileName.lower())
-            unorderedBipartiteEdgeList.append(reversedEmailToRecipientEdge)
-
-            #Adding all sender->recipient edges for nonBipartite graph
-            senderToRecipientEdge = (senderAddress.lower(), recipient.lower())
-            emailNetworkEdgeList.append(senderToRecipientEdge)
-        
-        #Good to get feedback on progress.
-        print("Parsed " + trimmedFileName + " successfully.")
+        #Write all To-From Edges
+        for recipientAddress in recipientAddresses:
+            edge = (senderAddress, recipientAddress, email)
+            emailNetworkEdgeList.append(edge)
+        emailAttributesList.append((email, emailTime, body))
+        print("Parsed " + email + " successfully.")
 
 #Remove self-referential emails
 #Maybe ToDo - record which duplicate references were removed?
 preSelfReferenceRemoval = len(emailNetworkEdgeList)
 emailNetworkEdgeList = list(filter(removeDuplicates, emailNetworkEdgeList))
 postSelfReferenceRemoval = len(list(emailNetworkEdgeList))
-print("The number of removed self-referential emails is: " 
+print("The number of removed self-referential edges is: " 
     + str(preSelfReferenceRemoval - postSelfReferenceRemoval))
 
-#Assign weights to elements
-weightedEmailNetworkEdgeList = list(Counter(emailNetworkEdgeList).items())                          #type is ((str * str) * int)[]
-
-#Write aggregate types into comma-separated strings to be written to file
-bipartiteEdgeTextList = list(map(writeAsCSVLine, bipartiteEdgeList))
-unorderedBipartiteEdgeTextList = list(map(writeAsCSVLine, unorderedBipartiteEdgeList))
-weightedEmailNetworkEdgeTextList = list(map(writeAsCSVLineWeighted, weightedEmailNetworkEdgeList))
-
-#Append headers to lists for printing.
-networkEdgeListHeader = "To,From,weight\n"
-bipartiteEdgeListHeader = "To,From\n"
-unorderedBipartiteEdgeListHeader = "Address,email\n"
-
-weightedEmailNetworkEdgeTextList = [networkEdgeListHeader] + weightedEmailNetworkEdgeTextList               #type is str[]
-bipartiteEdgeTextList = [bipartiteEdgeListHeader] + bipartiteEdgeTextList                                   #type is str[]
-unorderedBipartiteEdgeTextList = [unorderedBipartiteEdgeListHeader] + unorderedBipartiteEdgeTextList        #type is str[]
 
 
-#Write all files
-bipartiteEdgeListCsv.writelines(bipartiteEdgeTextList)
-unorderedBipartiteEdgeListCsv.writelines(unorderedBipartiteEdgeTextList)
-emailAttributesCsv.writelines(emailAttributesList)
-emailNetworkEdgeCsv.writelines(weightedEmailNetworkEdgeTextList)
-unreadableEmailsCsv.writelines(unreadableEmailsList)
+#####################################################################################################################################
+#                                           Write all email edges to xlsx file
+#####################################################################################################################################
+emailNetworkEdgeList.insert(0, ("from", "to", "email"))
+for index in range(len(emailNetworkEdgeList)):
+    row = index+ 1
+    edge = emailNetworkEdgeList[index]
+    (sender, recipient, email) = edge
+    
+    senderCell = edgeSheet.cell(row=row, column=1)
+    recipientCell = edgeSheet.cell(row=row, column=2)
+    emailCell = edgeSheet.cell(row=row, column=3)
+    tryWithDefault(senderCell, sender, "")
+    tryWithDefault(recipientCell, recipient, "")
+    tryWithDefault(emailCell, email, "")
+
+
+
+#####################################################################################################################################
+#                                           Write all email attributes to xlsx file
+#####################################################################################################################################
+emailAttributesList.insert(0, ("email", "timestamp", "body"))
+for index in range(len(emailAttributesList)):
+    row = index + 1
+    attributes = emailAttributesList[index]
+    (email, timestamp, body) = attributes
+    
+    emailCell = attributeSheet.cell(row=row, column=1)
+    timestampCell = attributeSheet.cell(row=row, column=2)
+    bodyCell = attributeSheet.cell(row=row, column=3)
+    tryWithDefault(emailCell, email, "")
+    tryWithDefault(timestampCell, timestamp, "")
+    tryWithDefault(bodyCell, body, "")
+
+
+
+#####################################################################################################################################
+#                             Write all emails we could not parse due to problems with addresses
+#####################################################################################################################################
+unreadableEmailsList.insert(0, "Unreadable Emails")
+for index in range(len(unreadableEmailsList)):
+    row = index + 1
+    emailCell = attributeSheet.cell(row=row, column=1)
+    tryWithDefault(emailCell, email, "")
+
+#Save File.
+outputExcelWorkbook.save("EmailDataset.xlsx")
 
 print("Time elapsed(in seconds): " + str(time.time()-start))
