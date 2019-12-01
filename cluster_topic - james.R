@@ -11,7 +11,8 @@ library(topicmodels)
 library(tidytext)
 
 stopwords.df <- read.table('stopwords_en.txt', stringsAsFactors = FALSE)
-data.df <- read.table('email-dnc-corecipient.edges', skip = 1)
+#data.df <- read.table('email-dnc-corecipient.edges', skip = 1)
+data.df <- read.csv('network.csv', stringsAsFactors = FALSE)
 email.df <- read_csv('emails.csv')
 email.df <- na.omit(email.df)
 header.df <- read_csv('headers.csv')
@@ -56,13 +57,16 @@ email.topic <- email.topic[-remove,]
 for (j in 1:length(com$csize))
 {
   #
+  cluster.vector <- com$names[which(com$membership==j)]
   topic.df <- NULL
-  for (i in 1:length(com$names))
+  for (i in 1:nrow(data.df))
   {
-    if (com$membership[i] != j) {
-      next
-    }
-    topic.df <- rbind(topic.df, email.topic[email.topic$doc_id==com$names[i], ])
+    if (!(data.df$node1[i] %in% cluster.vector))
+      next()
+    if (!(data.df$node2[i] %in% cluster.vector))
+      next()
+    email.list <- strsplit(data.df$emails[i], ',')
+    topic.df <- rbind(topic.df, email.topic[email.topic$doc_id%in%email.list[[1]], ])
   }
   
   topic.dtm <- DocumentTermMatrix(Corpus(DataframeSource(topic.df)))
