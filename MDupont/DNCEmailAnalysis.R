@@ -14,7 +14,6 @@ library(tidytext)
 library(dplyr)
 
 
-
 setwd("C:/Users/matth/Desktop/COSC5610 Project/Data-Mining-Project/MDupont")
 emailEdges <-  read_excel("EmailDataset.xlsx", sheet = "EdgeList")
 emailAttributes <- read_excel("EmailDataset.xlsx", sheet = "Attributes")
@@ -32,24 +31,24 @@ E(network.directed)$weight <- 1
 network.directed.weighted <- igraph::simplify(network.directed, edge.attr.comb=list(weight='sum', email= 'concat', 'ignore'))
 
 # centrality metrics = 
-V(network.directed)$degree      <- degree(network.directed)
-V(network.directed)$betweenness <- betweenness(network.directed, weights = NULL)
+V(network.directed)$degree                <- degree(network.directed)
+V(network.directed)$betweenness           <- betweenness(network.directed, weights = NULL)
 
-V(network.directed.weighted)$degree      <- degree(network.directed.weighted)
-V(network.directed.weighted)$strength    <- strength(network.directed.weighted)
-V(network.directed.weighted)$betweenness <- betweenness(network.directed.weighted, weights = NULL)
+V(network.directed.weighted)$degree       <- degree(network.directed.weighted)
+V(network.directed.weighted)$strength     <- strength(network.directed.weighted)
+V(network.directed.weighted)$betweenness  <- betweenness(network.directed.weighted, weights = NULL)
 
-V(network.directed.weighted)$indegree <- degree(network.directed.weighted, mode = c("in"))
-V(network.directed.weighted)$outdegree <- degree(network.directed.weighted, mode = c("out"))
-
+V(network.directed.weighted)$indegree     <- degree(network.directed.weighted, mode = c("in"))
+V(network.directed.weighted)$outdegree    <- degree(network.directed.weighted, mode = c("out"))
 
 ##################################Visualization parameters#################
 #
 # edge size
 #E(network.directed.weighted)$weight <- data.df$V3
 E(network.directed.weighted)$width <- ifelse(E(network.directed.weighted)$weight>142, 10, 
-                              ifelse(E(network.directed.weighted)$weight>99, 5, 
-                                     ifelse(E(network.directed.weighted)$weight>61, 2, 1)))
+                                        ifelse(E(network.directed.weighted)$weight>99, 5, 
+                                          ifelse(E(network.directed.weighted)$weight>61, 2, 1)))
+E(network.directed.weighted)$width <- 2
 E(network.directed.weighted)$color <- ifelse(E(network.directed.weighted)$weight>61, "blue", "lightgray")
 E(network.directed.weighted)$arrow.size <- .3
 
@@ -63,6 +62,8 @@ V(network.directed.weighted)$size <- ifelse(V(network.directed.weighted)$degree>
 V(network.directed.weighted)$label <- ifelse(V(network.directed.weighted)$degree>100, V(network.directed.weighted)$name, "")
 V(network.directed.weighted)$label <- ""
 
+V(network.directed.weighted)$neighbors <- neighbors(network.directed.weighted, V(network.directed.weighted))
+
 ##########################################################################
 
 
@@ -75,13 +76,22 @@ plot(network.directed.weighted, layout = network.directed.weighted.layout)
 dev.off()
 
 #Node Color: Green nodes only input information, Red nodes only receive information.
-V(network.directed.weighted)$color <- ifelse(V(network.directed.weighted)$outdegree==0, "green", 
-                                             ifelse(V(network.directed.weighted)$indegree==0, "red", "yellow"))
+V(network.directed.weighted)$color <- ifelse(V(network.directed.weighted)$outdegree==0, "red", 
+                                             ifelse(V(network.directed.weighted)$indegree==0, "green", "yellow"))
 V(network.directed.weighted)$frame.color <- "black"
-V(network.directed.weighted)$size <- log(V(network.directed.weighted)$strength, base = 10)
+V(network.directed.weighted)$frame.size <- .1
+#V(network.directed.weighted)$size <- log(V(network.directed.weighted)$strength, base = 10)
+V(network.directed.weighted)$size <- 1
 
-#Write to file
+
 svg('DNCEmailNetworkSourcesAndSinks.svg', width = 10, height = 10)
+plot(network.directed.weighted, layout = network.directed.weighted.layout)
+dev.off()
+
+V(network.directed.weighted)$color <- "white"
+V(network.directed.weighted)$size <- .5
+
+svg('DNCEmailEdges.svg', width = 10, height = 10)
 plot(network.directed.weighted, layout = network.directed.weighted.layout)
 dev.off()
 
@@ -117,53 +127,40 @@ plot(
 dev.off()
 
 
-senderDegreeHistogram <- as.data.frame(table(V(network.directed)$outdegree))
-senderDegreeHistogram$Var1 <- as.numeric(levels(senderDegreeHistogram$Var1))[senderDegreeHistogram$Var1] 
-
-svg(filename = 'SenderOutDegreeDistribution.svg', width = 10, height = 10)
-plot(
-  senderDegreeHistogram,
-  log = "xy",
-  xlab = "SenderOutDegree",
-  ylab = "Frequency")
-dev.off()
-
-
-recipientDegreeHistogram <- as.data.frame(table(V(network.directed)$indegree))
-recipientDegreeHistogram$Var1 <- as.numeric(levels(recipientDegreeHistogram$Var1))[recipientDegreeHistogram$Var1] 
-
-svg(filename = 'RecipientIndegreeDistribution.svg', width = 10, height = 10)
-plot(
-  recipientDegreeHistogram,
-  log = "xy",
-  xlab = "RecipientInDegree",
-  ylab = "Frequency")
-dev.off()
-
-
-inDegreeHistogram <- as.data.frame(table(V(network.directed)$indegree))
-inDegreeHistogram $Var1 <- as.numeric(levels(inDegreeHistogram $Var1))[inDegreeHistogram $Var1] 
+inDegreeHistogram <- as.data.frame(table(V(network.directed.weighted)$indegree))
+inDegreeHistogram$Var1 <- as.numeric(levels(inDegreeHistogram $Var1))[inDegreeHistogram $Var1] 
 
 svg(filename = 'InDegreeDistribution.svg', width = 10, height = 10)
 plot(
   inDegreeHistogram,
   log = "xy",
-  xlab = "OveraDegree",
+  xlab = "InDegree",
   ylab = "Frequency")
 dev.off()
 
-outDegreeHistogram <- as.data.frame(table(V(network.directed)$outdegree))
+outDegreeHistogram <- as.data.frame(table(V(network.directed.weighted)$outdegree))
 outDegreeHistogram$Var1 <- as.numeric(levels(outDegreeHistogram$Var1))[outDegreeHistogram$Var1] 
 
 svg(filename = 'OutDegreeDistribution.svg', width = 10, height = 10)
 plot(
   outDegreeHistogram,
   log = "xy",
-  xlab = "SenderOutDegree",
+  xlab = "OutDegree",
   ylab = "Frequency")
 dev.off()
 
+edgeWeightHistogram <- as.data.frame(table(E(network.directed.weighted)$weight))
+edgeWeightHistogram$Var1 <- as.numeric(levels(edgeWeightHistogram$Var1))[edgeWeightHistogram$Var1]
 
+
+svg(filename = "EdgeWeightDistribution.svg")
+plot(
+  edgeWeightHistogram,
+  log = "xy",
+  xlab = "Edge Weight",
+  ylab = "Frequency"
+)
+dev.off()
 
 #########################################################
 #                      Cluster Analysis
