@@ -15,11 +15,11 @@ library(dplyr)
 
 
 
-setwd("C:/Users/Matthew/Desktop/Data-Mining-Project/MDupont")
+setwd("C:/Users/matth/Desktop/COSC5610 Project/Data-Mining-Project/MDupont")
 emailEdges <-  read_excel("EmailDataset.xlsx", sheet = "EdgeList")
 emailAttributes <- read_excel("EmailDataset.xlsx", sheet = "Attributes")
 
-setwd("C:/Users/Matthew/Desktop/Data-Mining-Project/MDupont/Images")
+setwd("C:/Users/matth/Desktop/COSC5610 Project/Data-Mining-Project/MDupont/Images")
 set.seed(1234)
 
 ###########################################################################
@@ -36,7 +36,12 @@ V(network.directed)$degree      <- degree(network.directed)
 V(network.directed)$betweenness <- betweenness(network.directed, weights = NULL)
 
 V(network.directed.weighted)$degree      <- degree(network.directed.weighted)
+V(network.directed.weighted)$strength    <- strength(network.directed.weighted)
 V(network.directed.weighted)$betweenness <- betweenness(network.directed.weighted, weights = NULL)
+
+V(network.directed.weighted)$indegree <- degree(network.directed.weighted, mode = c("in"))
+V(network.directed.weighted)$outdegree <- degree(network.directed.weighted, mode = c("out"))
+
 
 ##################################Visualization parameters#################
 #
@@ -48,6 +53,7 @@ E(network.directed.weighted)$width <- ifelse(E(network.directed.weighted)$weight
 E(network.directed.weighted)$color <- ifelse(E(network.directed.weighted)$weight>61, "blue", "lightgray")
 E(network.directed.weighted)$arrow.size <- .3
 
+
 # node color
 V(network.directed.weighted)$color <- ifelse(V(network.directed.weighted)$degree>100, "red", "black")
 V(network.directed.weighted)$frame.color <- ifelse(V(network.directed.weighted)$degree>100, "red", "black")
@@ -56,6 +62,7 @@ V(network.directed.weighted)$size <- ifelse(V(network.directed.weighted)$degree>
 # node label
 V(network.directed.weighted)$label <- ifelse(V(network.directed.weighted)$degree>100, V(network.directed.weighted)$name, "")
 V(network.directed.weighted)$label <- ""
+
 ##########################################################################
 
 
@@ -64,6 +71,17 @@ network.directed.weighted.layout = layout_with_fr(network.directed.weighted, gri
 
 #Write to file
 svg('DNCEmailNetwork.svg', width = 10, height = 10)
+plot(network.directed.weighted, layout = network.directed.weighted.layout)
+dev.off()
+
+#Node Color: Green nodes only input information, Red nodes only receive information.
+V(network.directed.weighted)$color <- ifelse(V(network.directed.weighted)$outdegree==0, "green", 
+                                             ifelse(V(network.directed.weighted)$indegree==0, "red", "yellow"))
+V(network.directed.weighted)$frame.color <- "black"
+V(network.directed.weighted)$size <- log(V(network.directed.weighted)$strength, base = 10)
+
+#Write to file
+svg('DNCEmailNetworkSourcesAndSinks.svg', width = 10, height = 10)
 plot(network.directed.weighted, layout = network.directed.weighted.layout)
 dev.off()
 
@@ -76,8 +94,31 @@ V(network.directed)$outdegree <- degree(network.directed, mode = c("out"))
 sendersOnly = subset(V(network.directed), V(network.directed)$indegree == 0)
 recipientsOnly = subset(V(network.directed), V(network.directed)$outdegree == 0)
 
-senderDegreeHistogram = as.data.frame(table(V(network.directed)$outdegree))
-senderDegreeHistogram[,1] <- as.numeric(senderDegreeHistogram[,1])
+degreeHistogram <- as.data.frame(table(V(network.directed.weighted)$degree))
+degreeHistogram$Var1 <- as.numeric(levels(degreeHistogram$Var1))[degreeHistogram$Var1] 
+
+svg(filename = 'DegreeDistribution.svg', width = 10, height = 10)
+plot(
+  degreeHistogram,
+  log = "xy",
+  xlab = "Degree",
+  ylab = "Frequency")
+dev.off()
+
+strengthHistogram <- as.data.frame(table(V(network.directed.weighted)$strength))
+strengthHistogram$Var1 <- as.numeric(levels(strengthHistogram$Var1))[strengthHistogram$Var1] 
+
+svg(filename = 'StrengthDistribution.svg', width = 10, height = 10)
+plot(
+  strengthHistogram,
+  log = "xy",
+  xlab = "Strength",
+  ylab = "Frequency")
+dev.off()
+
+
+senderDegreeHistogram <- as.data.frame(table(V(network.directed)$outdegree))
+senderDegreeHistogram$Var1 <- as.numeric(levels(senderDegreeHistogram$Var1))[senderDegreeHistogram$Var1] 
 
 svg(filename = 'SenderOutDegreeDistribution.svg', width = 10, height = 10)
 plot(
@@ -88,39 +129,41 @@ plot(
 dev.off()
 
 
-recipientDegreeHistogram = as.data.frame(table(V(network.directed)$indegree))
-recipientDegreeHistogram[,1] <- as.numeric(recipientDegreeHistogram[,1])
+recipientDegreeHistogram <- as.data.frame(table(V(network.directed)$indegree))
+recipientDegreeHistogram$Var1 <- as.numeric(levels(recipientDegreeHistogram$Var1))[recipientDegreeHistogram$Var1] 
 
-svg(filename = 'RecipientIndegreeHistogram.svg', width = 10, height = 10)
+svg(filename = 'RecipientIndegreeDistribution.svg', width = 10, height = 10)
 plot(
-  for (i in (1: length(V(network.directed.weighted)$name)))DegreeHistogram,
+  recipientDegreeHistogram,
   log = "xy",
   xlab = "RecipientInDegree",
   ylab = "Frequency")
 dev.off()
 
 
-inDegreeHistogram = as.data.frame(table(V(network.directed)$indegree))
-inDegreeHistogram[,1] <- as.numeric(inDegreeHistogram[,1])
+inDegreeHistogram <- as.data.frame(table(V(network.directed)$indegree))
+inDegreeHistogram $Var1 <- as.numeric(levels(inDegreeHistogram $Var1))[inDegreeHistogram $Var1] 
 
 svg(filename = 'InDegreeDistribution.svg', width = 10, height = 10)
 plot(
-  senderDegreeHistogram,
+  inDegreeHistogram,
   log = "xy",
   xlab = "OveraDegree",
   ylab = "Frequency")
 dev.off()
 
-outDegreeHistogram = as.data.frame(table(V(network.directed)$outdegree))
-outDegreeHistogram[,1] <- as.numeric(outDegreeHistogram[,1])
+outDegreeHistogram <- as.data.frame(table(V(network.directed)$outdegree))
+outDegreeHistogram$Var1 <- as.numeric(levels(outDegreeHistogram$Var1))[outDegreeHistogram$Var1] 
 
 svg(filename = 'OutDegreeDistribution.svg', width = 10, height = 10)
 plot(
-  senderDegreeHistogram,
+  outDegreeHistogram,
   log = "xy",
   xlab = "SenderOutDegree",
   ylab = "Frequency")
 dev.off()
+
+
 
 #########################################################
 #                      Cluster Analysis
