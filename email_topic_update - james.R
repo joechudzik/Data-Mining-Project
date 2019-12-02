@@ -7,13 +7,16 @@ library(NLP)
 library(tm)
 library(SnowballC)
 library(topicmodels)
+library(tidytext)
 
 emails <- read_csv('emails.csv')
 stopwords.df <- read.table('stopwords_en.txt', stringsAsFactors = FALSE)
 
-emailbodies <- emails$body
-docs <- Corpus(VectorSource(emailbodies)) # create corpus from vector of email bodies
-writeLines(as.character(docs[[1]]))       # inspect particular document in corpus
+#emailbodies <- emails$body
+#docs <- Corpus(VectorSource(emailbodies)) # create corpus from vector of email bodies
+names(emails) = c("doc_id", "subject", "text")
+docs <- Corpus(DataframeSource(emails))
+#writeLines(as.character(docs[[1]]))       # inspect particular document in corpus
 
 # removing potentially problematic symbols
 toSpace <- content_transformer(function(x, pattern) { return (gsub(pattern, ' ', x))})
@@ -37,13 +40,13 @@ docs <- tm_map(docs, removeWords, stopwords.df[[1]])
 #remove whitespace
 docs <- tm_map(docs, stripWhitespace)
 #Good practice to check every now and then
-writeLines(as.character(docs[[30]]))
+#writeLines(as.character(docs[[30]]))
 #Stem document
 docs <- tm_map(docs, stemDocument)
 
-#myCorpusTokenized <- lapply(docs, scan_tokenizer)
-#myTokensStemCompleted <- lapply(myCorpusTokenized, stemCompletion, docs)
-#myDf <- data.frame(text = sapply(myTokensStemCompleted, paste, collapse = " "), stringsAsFactors = FALSE)
+
+################################################################################
+
 myDf <- data.frame(text = sapply(docs, paste, collapse = " "), stringsAsFactors = FALSE)
 myDf <- cbind(emails$index, myDf)
 colnames(myDf) <- c("doc_id", "text")
@@ -52,9 +55,6 @@ remove <- which(nchar(myDf$text) == 0)
 myDf <- myDf[-remove,]
 remove <- which(myDf$text == 'NA')
 myDf <- myDf[-remove,]
-
-
-################################################################################
 
 mallet.instances <- mallet.import(myDf$id, myDf$text, "stopwords_en.txt", 
                                   FALSE, token.regexp="[\\p{L}']+")
@@ -103,10 +103,10 @@ for(i in 1:num.topics){
 
 ##################################################################################
 # GUHA
-topic.dtm <- DocumentTermMatrix(Corpus(DataframeSource(myDf)))
+topic.dtm <- DocumentTermMatrix(docs)
 #rowSum <- apply(topic.dtm , 1, sum)
 #topic.dtm <- topic.dtm[rowSum> 0, ]
-ap_lda <- LDA(topic.dtm, k = 2, control = list(seed = 1234))
+ap_lda <- LDA(topic.dtm, k = 5, control = list(seed = 1234))
 ap_topics <- tidy(ap_lda, matrix = "beta")
 ap_top_terms <- ap_topics %>%
   group_by(topic) %>%
