@@ -27,6 +27,10 @@ docs <- tm_map(docs, toSpace, '\\.')
 docs <- tm_map(docs, toSpace, ':')
 docs <- tm_map(docs, toSpace, '@')
 docs <- tm_map(docs, toSpace, '/')
+docs <- tm_map(docs, toSpace, '”')
+docs <- tm_map(docs, toSpace, '“')
+docs <- tm_map(docs, toSpace, '‘')
+docs <- tm_map(docs, toSpace, '’')
 
 # remove punctuation
 docs <- tm_map(docs, removePunctuation)
@@ -42,7 +46,7 @@ docs <- tm_map(docs, stripWhitespace)
 #Good practice to check every now and then
 #writeLines(as.character(docs[[30]]))
 #Stem document
-docs <- tm_map(docs, stemDocument)
+docs <- tm_map(docs, stemDocument, 'english')
 
 
 ################################################################################
@@ -106,11 +110,11 @@ for(i in 1:num.topics){
 topic.dtm <- DocumentTermMatrix(docs)
 #rowSum <- apply(topic.dtm , 1, sum)
 #topic.dtm <- topic.dtm[rowSum> 0, ]
-ap_lda <- LDA(topic.dtm, k = 5, control = list(seed = 1234))
+ap_lda <- LDA(topic.dtm, k = 4, control = list(seed = 1234))
 ap_topics <- tidy(ap_lda, matrix = "beta")
 ap_top_terms <- ap_topics %>%
   group_by(topic) %>%
-  top_n(10, beta) %>%
+  top_n(20, beta) %>%
   ungroup() %>%
   arrange(topic, -beta)
 ap_top_terms %>%

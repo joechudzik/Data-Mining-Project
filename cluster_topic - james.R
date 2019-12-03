@@ -37,12 +37,16 @@ docs <- tm_map(docs, toSpace, '\\.')
 docs <- tm_map(docs, toSpace, ':')
 docs <- tm_map(docs, toSpace, '@')
 docs <- tm_map(docs, toSpace, '/')
+docs <- tm_map(docs, toSpace, '”')
+docs <- tm_map(docs, toSpace, '“')
+docs <- tm_map(docs, toSpace, '‘')
+docs <- tm_map(docs, toSpace, '’')
 docs <- tm_map(docs, removePunctuation)
 docs <- tm_map(docs, removeNumbers)
 docs <- tm_map(docs, tolower)
 #docs <- tm_map(docs, removeWords, stopwords('english'))
 docs <- tm_map(docs, removeWords, stopwords.df[[1]])
-docs <- tm_map(docs, toSpace, '\'')
+#docs <- tm_map(docs, toSpace, '\'')
 docs <- tm_map(docs, stripWhitespace)
 #writeLines(as.character(docs[[30]]))
 docs <- tm_map(docs, stemDocument, 'english')
@@ -73,6 +77,7 @@ for (j in 1:length(com$csize))
   rowSum <- apply(topic.dtm , 1, sum)
   topic.dtm <- topic.dtm[rowSum> 0, ]
   ap_lda <- LDA(topic.dtm, k = 2, control = list(seed = 1234))
+  #
   ap_topics <- tidy(ap_lda, matrix = "beta")
   ap_top_terms <- ap_topics %>%
     group_by(topic) %>%
@@ -88,4 +93,8 @@ for (j in 1:length(com$csize))
     scale_x_reordered() + 
     labs(title=paste("cluster ", j)) +
     ggsave(paste("cluster_",j,".png"))
+  # gamma
+  email.gamma <- tidy(ap_lda, matrix="gamma")
+  gamma.df <- as.data.frame(email.gamma)
+  write.csv(gamma.df, paste('cluster', j, '_gamma.csv'))
 }
