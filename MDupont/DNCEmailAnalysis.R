@@ -12,13 +12,17 @@ library(topicmodels)
 library(tidyr)
 library(tidytext)
 library(dplyr)
+library(ggplot2)
+library(scales)
 
 
-setwd("C:/Users/matth/Desktop/COSC5610 Project/Data-Mining-Project/MDupont")
+#setwd("C:/Users/matth/Desktop/COSC5610 Project/Data-Mining-Project/MDupont")
+setwd("/Users/Joey/Documents/GitHub/Data-Mining-Project/MDupont")
 emailEdges <-  read_excel("EmailDataset.xlsx", sheet = "EdgeList")
 emailAttributes <- read_excel("EmailDataset.xlsx", sheet = "Attributes")
 
-setwd("C:/Users/matth/Desktop/COSC5610 Project/Data-Mining-Project/MDupont/Images")
+#setwd("C:/Users/matth/Desktop/COSC5610 Project/Data-Mining-Project/MDupont/Images")
+setwd("/Users/Joey/Documents/GitHub/Data-Mining-Project/MDupont/Images")
 set.seed(1234)
 
 ###########################################################################
@@ -108,59 +112,89 @@ degreeHistogram <- as.data.frame(table(V(network.directed.weighted)$degree))
 degreeHistogram$Var1 <- as.numeric(levels(degreeHistogram$Var1))[degreeHistogram$Var1] 
 
 svg(filename = 'DegreeDistribution.svg', width = 10, height = 10)
-plot(
-  degreeHistogram,
-  log = "xy",
-  xlab = "Degree",
-  ylab = "Frequency")
+# plot(
+#   degreeHistogram,
+#   log = "xy",
+#   xlab = "Degree",
+#   ylab = "Frequency")
 dev.off()
+
+ggplot(degreeHistogram, aes(x=Var1, y=Freq)) + geom_point() +
+  scale_x_log10(breaks=c(0,1,2,5,10,20,50,100,200,500)) + scale_y_log10(breaks=c(0,1,5,10,50,100,500,750)) +
+  xlab('Degree') + ylab('Frequency') + ggtitle('Degree Distribution') + theme_bw() +
+  theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
+
 
 strengthHistogram <- as.data.frame(table(V(network.directed.weighted)$strength))
 strengthHistogram$Var1 <- as.numeric(levels(strengthHistogram$Var1))[strengthHistogram$Var1] 
 
 svg(filename = 'StrengthDistribution.svg', width = 10, height = 10)
-plot(
-  strengthHistogram,
-  log = "xy",
-  xlab = "Strength",
-  ylab = "Frequency")
+# plot(
+#   strengthHistogram,
+#   log = "xy",
+#   xlab = "Strength",
+#   ylab = "Frequency")
 dev.off()
+
+ggplot(strengthHistogram, aes(x=Var1, y=Freq)) + geom_point() +
+  scale_x_log10(breaks=c(0,1,2,5,10,20,50,100,200,500)) + scale_y_log10(breaks=c(0,1,5,10,50,100,500,750)) +
+  xlab('Strength') + ylab('Frequency') + ggtitle('Strength Histogram') + theme_bw() +
+  theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
 
 
 inDegreeHistogram <- as.data.frame(table(V(network.directed.weighted)$indegree))
 inDegreeHistogram$Var1 <- as.numeric(levels(inDegreeHistogram $Var1))[inDegreeHistogram $Var1] 
 
 svg(filename = 'InDegreeDistribution.svg', width = 10, height = 10)
-plot(
-  inDegreeHistogram,
-  log = "xy",
-  xlab = "InDegree",
-  ylab = "Frequency")
+# plot(
+#   inDegreeHistogram,
+#   log = "xy",
+#   xlab = "InDegree",
+#   ylab = "Frequency")
 dev.off()
+
+ggplot(inDegreeHistogram, aes(x=Var1, y=Freq)) + geom_point() +
+  scale_x_log10(breaks=c(0,1,2,5,10,20,50,100,200,500)) + scale_y_log10(breaks=c(0,1,5,10,50,100,500,750)) +
+  xlab('InDegree') + ylab('Frequency') + ggtitle('InDegree Distribution') + theme_bw() +
+  theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
 
 outDegreeHistogram <- as.data.frame(table(V(network.directed.weighted)$outdegree))
 outDegreeHistogram$Var1 <- as.numeric(levels(outDegreeHistogram$Var1))[outDegreeHistogram$Var1] 
 
 svg(filename = 'OutDegreeDistribution.svg', width = 10, height = 10)
-plot(
-  outDegreeHistogram,
-  log = "xy",
-  xlab = "OutDegree",
-  ylab = "Frequency")
+# plot(
+#   outDegreeHistogram,
+#   log = "xy",
+#   xlab = "OutDegree",
+#   ylab = "Frequency")
 dev.off()
+
+ggplot(outDegreeHistogram, aes(x=Var1, y=Freq)) + geom_point() +
+  scale_x_log10(breaks=c(0,1,2,5,10,20,50,100,200,500)) + scale_y_log10(breaks=c(0,1,5,10,50,100,500,750)) +
+  xlab('OutDegree') + ylab('Frequency') + ggtitle('OutDegree Distribution') + theme_bw() +
+  theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
 
 edgeWeightHistogram <- as.data.frame(table(E(network.directed.weighted)$weight))
 edgeWeightHistogram$Var1 <- as.numeric(levels(edgeWeightHistogram$Var1))[edgeWeightHistogram$Var1]
 
-
 svg(filename = "EdgeWeightDistribution.svg")
-plot(
-  edgeWeightHistogram,
-  log = "xy",
-  xlab = "Edge Weight",
-  ylab = "Frequency"
-)
+# plot(
+#   edgeWeightHistogram,
+#   log = "xy",
+#   xlab = "Edge Weight",
+#   ylab = "Frequency"
+# )
 dev.off()
+
+ggplot(edgeWeightHistogram, aes(x=Var1, y=Freq)) + geom_point() +
+  scale_x_log10(breaks=c(0,1,2,5,10,20,50,100,200,500)) + scale_y_log10(breaks=c(0,1,5,10,50,100,500,750)) +
+  xlab('Edge Weight') + ylab('Frequency') + ggtitle('edgeWeight Histogram') + theme_bw() +
+  theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
 
 #########################################################
 #                      Cluster Analysis
