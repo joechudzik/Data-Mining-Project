@@ -12,9 +12,17 @@ library(tidytext)
 emails <- read_csv('emails.csv')
 stopwords.df <- read.table('stopwords_en.txt', stringsAsFactors = FALSE)
 
+emails <- na.omit(emails)
+remove <- which(nchar(emails$body) == 0)
+if (0 != length(remove)) {
+  emails <- emails[-remove,]
+}
+
 #emailbodies <- emails$body
 #docs <- Corpus(VectorSource(emailbodies)) # create corpus from vector of email bodies
 names(emails) = c("doc_id", "subject", "text")
+emails$doc_id = as.character(emails$doc_id)
+emails <- as.data.frame(emails)
 docs <- Corpus(DataframeSource(emails))
 #writeLines(as.character(docs[[1]]))       # inspect particular document in corpus
 
@@ -110,7 +118,10 @@ for(i in 1:num.topics){
 topic.dtm <- DocumentTermMatrix(docs)
 #rowSum <- apply(topic.dtm , 1, sum)
 #topic.dtm <- topic.dtm[rowSum> 0, ]
-ap_lda <- LDA(topic.dtm, k = 4, control = list(seed = 1234))
+ui <- unique(topic.dtm$i)
+topic.dtm.ui <- topic.dtm[ui, ]
+ap_lda <- LDA(topic.dtm.ui, k = 4, control = list(seed = 1234))
+#
 ap_topics <- tidy(ap_lda, matrix = "beta")
 ap_top_terms <- ap_topics %>%
   group_by(topic) %>%
@@ -124,3 +135,13 @@ ap_top_terms %>%
   facet_wrap(~ topic, scales = "free") +
   coord_flip() +
   scale_x_reordered()
+#
+email.gamma <- tidy(ap_lda, matrix="gamma")
+gamma.df <- as.data.frame(email.gamma)
+write.csv(gamma.df, 'overall_gamma.csv')
+email_classifications <- email.gamma %>%
+  group_by(document) %>%
+  top_n(1, gamma) %>%
+  ungroup()
+
+
