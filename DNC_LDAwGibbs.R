@@ -1,4 +1,8 @@
+<<<<<<< Updated upstream
 rm(list=ls())
+=======
+#rm(list=ls())
+>>>>>>> Stashed changes
 
 library(igraph)
 library(readtext)
@@ -58,7 +62,11 @@ length(freq)
 ord <- order(freq,decreasing=TRUE)
 #List all terms in decreasing order of freq and write to disk
 freq[ord]
+<<<<<<< Updated upstream
 write.csv(freq[ord],'/Users/Joey/Desktop/word_freq.csv')
+=======
+#write.csv(freq[ord],'/Users/Joey/Desktop/word_freq.csv')
+>>>>>>> Stashed changes
 
 
 # R threw some hiccups. fixing error from above. (dont know how to explain it but error is reproducable without running next 2 lines)
@@ -66,7 +74,11 @@ raw.sum <- apply(dtm, 1, FUN=sum) # sum each row of the table
 dtm <- dtm[raw.sum!=0,] # delete all raws with 0
 
 #Run LDA using Gibbs sampling
+<<<<<<< Updated upstream
 ldaOut <-LDA(dtm, k=5, control = list(seed=1234), method='Gibbs')
+=======
+ldaOut <-LDA(dtm, k=4, control = list(seed=1234), method='Gibbs')
+>>>>>>> Stashed changes
 emails_lda <- ldaOut
 
 
@@ -108,6 +120,65 @@ beta_spread
 emails_documents <- tidy(emails_lda, matrix = "gamma")
 emails_documents
 
+<<<<<<< Updated upstream
+=======
+
+# code to extract top 5 documents per topic
+#
+top5_documents_topic1 <- subset(emails_documents, topic==1) %>% arrange(-gamma)
+top5_documents_topic1 <- top5_documents_topic1[1:5,]
+topic1_docs <- data.frame(emails[top5_documents_topic1$document[1],])
+t1_2 <- emails[top5_documents_topic1$document[2],]
+topic1_docs <- rbind(topic1_docs, t1_2)
+t1_3 <- emails[top5_documents_topic1$document[3],]
+topic1_docs <- rbind(topic1_docs, t1_3)
+t1_4 <- emails[top5_documents_topic1$document[4],]
+topic1_docs <- rbind(topic1_docs, t1_4)
+t1_5 <- emails[top5_documents_topic1$document[5],]
+topic1_docs <- rbind(topic1_docs, t1_5)
+
+
+
+top5_documents_topic2 <- subset(emails_documents, topic==2) %>% arrange(-gamma)
+top5_documents_topic2 <- top5_documents_topic2[1:5,]
+topic2_docs <- data.frame(emails[top5_documents_topic2$document[1],])
+t2_2 <- emails[top5_documents_topic2$document[2],]
+topic2_docs <- rbind(topic2_docs, t2_2)
+t2_3 <- emails[top5_documents_topic2$document[3],]
+topic2_docs <- rbind(topic2_docs, t2_3)
+t2_4 <- emails[top5_documents_topic2$document[4],]
+topic2_docs <- rbind(topic2_docs, t2_4)
+t2_5 <- emails[top5_documents_topic2$document[5],]
+topic2_docs <- rbind(topic2_docs, t2_5)
+
+
+top5_documents_topic3 <- subset(emails_documents, topic==3) %>% arrange(-gamma)
+top5_documents_topic3 <- top5_documents_topic3[1:5,]
+topic3_docs <- data.frame(emails[top5_documents_topic3$document[1],])
+t3_2 <- emails[top5_documents_topic3$document[2],]
+topic3_docs <- rbind(topic3_docs, t3_2)
+t3_3 <- emails[top5_documents_topic3$document[3],]
+topic3_docs <- rbind(topic3_docs, t3_3)
+t3_4 <- emails[top5_documents_topic3$document[4],]
+topic3_docs <- rbind(topic3_docs, t3_4)
+t3_5 <- emails[top5_documents_topic3$document[5],]
+topic3_docs <- rbind(topic3_docs, t3_5)
+
+top5_documents_topic4 <- subset(emails_documents, topic==4) %>% arrange(-gamma)
+top5_documents_topic4 <- top5_documents_topic4[1:5,]
+topic4_docs <- data.frame(emails[top5_documents_topic4$document[1],])
+t4_2 <- emails[top5_documents_topic4$document[2],]
+topic4_docs <- rbind(topic4_docs, t4_2)
+t4_3 <- emails[top5_documents_topic4$document[3],]
+topic4_docs <- rbind(topic4_docs, t4_3)
+t4_4 <- emails[top5_documents_topic4$document[4],]
+topic4_docs <- rbind(topic4_docs, t4_4)
+t4_5 <- emails[top5_documents_topic4$document[5],]
+topic4_docs <- rbind(topic4_docs, t4_5)
+
+
+
+>>>>>>> Stashed changes
 # the specific words and their frequencies within a document
 #
 tidy(halfEmails) %>%
