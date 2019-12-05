@@ -66,73 +66,6 @@ tidy(top10BetweennessVertices)
 ##The one address in the most important nodes list with no outdegree
 subset(V(network.directed.weighted)$name[top10CentralityIndices], V(network.directed.weighted)$outdegree[top10CentralityIndices] == 0)
 
-
-##################################Visualization parameters#################
-#
-# edge size
-#E(network.directed.weighted)$weight <- data.df$V3
-E(network.directed.weighted)$width <- ifelse(E(network.directed.weighted)$weight>142, 10, 
-                                             ifelse(E(network.directed.weighted)$weight>99, 5, 
-                                                    ifelse(E(network.directed.weighted)$weight>61, 2, 1)))
-E(network.directed.weighted)$width <- .5
-E(network.directed.weighted)$color <- ifelse(E(network.directed.weighted)$weight>61, "blue", "lightgray")
-E(network.directed.weighted)$arrow.size <- .1
-E(network.directed.weighted)$arrow.width <- .5
-
-
-# node color
-V(network.directed.weighted)$color <- ifelse(V(network.directed.weighted)$degree>100, "red", "black")
-V(network.directed.weighted)$frame.color <- V(network.directed.weighted)$color
-# node size
-V(network.directed.weighted)$size <- log(V(network.directed.weighted)$degree, 10)
-# node label
-V(network.directed.weighted)$label <- ifelse(V(network.directed.weighted)$degree>100, V(network.directed.weighted)$name, "")
-V(network.directed.weighted)$label <- ""
-
-##########################################################################
-
-network.directed.weighted.layout = layout_with_fr(network.directed.weighted, grid='nogrid')
-
-V(network.directed.weighted)$color <- "white"	
-V(network.directed.weighted)$frame.color <- "black"
-#Write to file
-svg('DNCEmailNetwork.svg', width = 10, height = 10)
-plot(network.directed.weighted, layout = network.directed.weighted.layout)
-dev.off()
-
-#Node Color: Green nodes only input information, Red nodes only receive information.
-V(network.directed.weighted)$color <- ifelse(V(network.directed.weighted)$outdegree==0, "red", 
-                                             ifelse(V(network.directed.weighted)$indegree==0, "green", "yellow"))
-V(network.directed.weighted)$frame.color <- "black"
-V(network.directed.weighted)$frame.size <- .1
-#V(network.directed.weighted)$size <- log(V(network.directed.weighted)$strength, base = 10)
-V(network.directed.weighted)$size <- 1
-
-
-svg('DNCEmailNetworkSourcesAndSinks.svg', width = 10, height = 10)
-plot(network.directed.weighted, layout = network.directed.weighted.layout)
-dev.off()
-
-V(network.directed.weighted)$color <- "white"
-V(network.directed.weighted)$size <- .5
-
-svg('DNCEmailEdges.svg', width = 10, height = 10)
-plot(network.directed.weighted, layout = network.directed.weighted.layout)
-dev.off()
-
-
-V(network.directed.weighted)$color = ifelse(V(network.directed.weighted)$name %in% top10MetricVertices, "white", "black")	
-V(network.directed.weighted)$size = ifelse(V(network.directed.weighted)$name %in% top10MetricVertices, 3, 1)  	
-for (i in 1:length(V(network.directed.weighted))) {	
-  V(network.directed.weighted)$color[i] = rgb(ifelse(V(network.directed.weighted)$isTop10Degree[i], 1, 0),	
-                                              ifelse(V(network.directed.weighted)$isTop10Strength[i], 1, 0),	
-                                              ifelse(V(network.directed.weighted)$isTop10Betweenness[i], 1, 0),	
-                                              1)	
-}	
-svg('DNCImportantNodes.svg', width = 10, height = 10)	
-plot(network.directed.weighted, layout = network.directed.weighted.layout)	
-dev.off()
-
 ###########################################################################
 #   Centrality Distributions, Edge weight distributions
 ###########################################################################
@@ -148,7 +81,7 @@ degreeHistogram$Var1 <- as.numeric(levels(degreeHistogram$Var1))[degreeHistogram
 svg(filename = 'DegreeDistribution.svg', width = 10, height = 10)
 ggplot(degreeHistogram, aes(x=Var1, y=Freq)) + geom_point() +
   scale_x_log10(breaks=c(0,1,2,5,10,20,50,100,200,500)) + scale_y_log10(breaks=c(0,1,5,10,50,100,500,750)) +
-  xlab('log(Degree)') + ylab('log(Frequency)') + ggtitle('Degree Distribution') + theme_bw() +
+  xlab('Degree') + ylab('Frequency') + ggtitle('Degree Distribution') + theme_bw() +
   theme(panel.border = element_blank(), panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
 dev.off()
@@ -201,17 +134,94 @@ ggplot(edgeWeightHistogram, aes(x=Var1, y=Freq)) + geom_point() +
         panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
 dev.off()
 
+maxEdgeWeight <- max(E(network.directed.weighted)$weight)
+
+###########################################################################
+#                           Network Visualizations
+##################################Visualization parameters#################
+#
+# edge size
+#E(network.directed.weighted)$weight <- data.df$V3
+E(network.directed.weighted)$width <- ifelse(E(network.directed.weighted)$weight>142, 10, 
+                                             ifelse(E(network.directed.weighted)$weight>99, 5, 
+                                                    ifelse(E(network.directed.weighted)$weight>61, 2, 1)))
+E(network.directed.weighted)$width <- .5
+#E(network.directed.weighted)$color <- ifelse(E(network.directed.weighted)$weight>61, "blue", "lightgray")
+E(network.directed.weighted)$arrow.size <- .1
+E(network.directed.weighted)$arrow.width <- .5
+
+
+# node color
+V(network.directed.weighted)$color <- ifelse(V(network.directed.weighted)$degree>100, "red", "black")
+V(network.directed.weighted)$frame.color <- V(network.directed.weighted)$color
+# node size
+V(network.directed.weighted)$size <- log(V(network.directed.weighted)$degree, 10)
+# node label
+V(network.directed.weighted)$label <- ifelse(V(network.directed.weighted)$degree>100, V(network.directed.weighted)$name, "")
+V(network.directed.weighted)$label <- ""
+
+##########################################################################
+
+network.directed.weighted.layout = layout_with_fr(network.directed.weighted, grid='nogrid')
+
+V(network.directed.weighted)$color <- "white"	
+V(network.directed.weighted)$frame.color <- "black"
+V(network.directed.weighted)$size <- log(V(network.directed.weighted)$strength, base = 10)
+#Write to file
+svg('DNCEmailNetwork.svg', width = 10, height = 10)
+plot(network.directed.weighted, layout = network.directed.weighted.layout)
+dev.off()
+
+#Node Color: Green nodes only input information, Red nodes only receive information.
+V(network.directed.weighted)$color <- ifelse(V(network.directed.weighted)$outdegree==0, "red", 
+                                             ifelse(V(network.directed.weighted)$indegree==0, "green", "yellow"))
+V(network.directed.weighted)$frame.color <- "black"
+V(network.directed.weighted)$frame.size <- .1
+V(network.directed.weighted)$size <- 1
+
+
+svg('DNCEmailNetworkSourcesAndSinks.svg', width = 10, height = 10)
+plot(network.directed.weighted, layout = network.directed.weighted.layout)
+dev.off()
+
+#V(network.directed.weighted)$color <- "white"
+#V(network.directed.weighted)$size <- .5
+#logweights = log(E(network.directed.weighted)$weight+1, 10)
+#E(network.directed.weighted)$relativeWeight <- log(E(network.directed.weighted)$weight+1, 10)/log(maxEdgeWeight+1, 10)
+#E(network.directed.weighted)$color <- rgb(0, 0, 0, E(network.directed.weighted)$relativeWeight)
+
+#svg('DNCEmailEdges.svg', width = 10, height = 10)
+#plot(network.directed.weighted, layout = network.directed.weighted.layout)
+#dev.off()
+
+
+V(network.directed.weighted)$color = ifelse(V(network.directed.weighted)$name %in% top10MetricVertices, "white", "black")	
+V(network.directed.weighted)$size = ifelse(V(network.directed.weighted)$name %in% top10MetricVertices, 3, 1)  	
+for (i in 1:length(V(network.directed.weighted))) {	
+  V(network.directed.weighted)$color[i] = rgb(ifelse(V(network.directed.weighted)$isTop10Degree[i], 1, 0),	
+                                              ifelse(V(network.directed.weighted)$isTop10Strength[i], 1, 0),	
+                                              ifelse(V(network.directed.weighted)$isTop10Betweenness[i], 1, 0),	
+                                              1)	
+}	
+svg('DNCImportantNodes.svg', width = 10, height = 10)	
+plot(network.directed.weighted, layout = network.directed.weighted.layout)	
+dev.off()
+
+V(network.directed.weighted)$size = 1
 
 #########################################################
 #                      Cluster Analysis
 #########################################################
 
 # cluster
+
+numberClusters <- 12
+
 graph.clusters <- clusters(network.directed.weighted)
 cluster.vector <- graph.clusters$membership[which(graph.clusters$membership==1)]
 cluster.vector <- names(cluster.vector)
 graph.sub <- subgraph(network.directed.weighted, cluster.vector)
-com <- cluster_spinglass(graph.sub, spins=12)
+com <- cluster_spinglass(graph.sub, spins=numberClusters)
 
 # set cluster color
 for (i in 1:length(V(network.directed.weighted)$name))
@@ -265,22 +275,54 @@ dev.off()
 
 
 
-thiscluster <- subgraph(network.directed.weighted, which(V(network.directed.weighted)$membership == 5))
-V(thiscluster)
+#thiscluster <- subgraph(network.directed.weighted, which(V(network.directed.weighted)$membership == 5))
+#V(thiscluster)
 
+V(network.directed.weighted)$highestDegreeSubgraphNode <- FALSE
 # Look at central nodes of each cluster
-for (i in 1:12){
-  thiscluster <- subgraph(network.directed.weighted, which(V(network.directed.weighted)$membership == i))
-  tidy(V(thiscluster))
+for (i in 1:numberClusters){
+  #i <- 4
+  clusterNodes <- which(V(network.directed.weighted)$membership == i)
+  clusterNodes
+  highestStrengthNode <- max(V(network.directed.weighted)$strength[clusterNodes])
+  highestStrengthNode <- which(V(network.directed.weighted)$strength[clusterNodes] == highestStrengthNode)
+  V(network.directed.weighted)$highestDegreeSubgraphNode[clusterNodes[highestStrengthNode]] <- TRUE
 }
+
+V(network.directed.weighted)$color <- ifelse(V(network.directed.weighted)$outdegree==0, "red", 	
+                                             ifelse(V(network.directed.weighted)$indegree==0, "green", "yellow"))
+V(network.directed.weighted)$size <- ifelse(V(network.directed.weighted)$highestDegreeSubgraphNode, 3, 1)
+V(network.directed.weighted)$frame.color <- V(network.directed.weighted)$membership
+svg(filename = "plot-with-clustersSinksSourcesMaxStrengthHighlighted.svg")	
+plot(network.directed.weighted, layout=network.directed.weighted.layout)	
+dev.off()	
 
 ##Extra New Stuff
 
 outlierIndices <- which(V(network.directed.weighted)$membership == 0)
 highestStrengthOfOutlier <- max(V(network.directed.weighted)$strength[outlierIndices])
 highestStrengthOutlier <- which(V(network.directed.weighted)$strength == highestStrengthOfOutlier)
-associatedEdges = E(network.directed.weighted)[inc(V(network.directed.weighted)[strength == highestStrengthOfOutlier])]
+associatedEdges <- E(network.directed.weighted)[inc(V(network.directed.weighted)[strength == highestStrengthOfOutlier])]
 associatedEdges$email
+
+for (thisCluster in 1:length(numberClusters))
+{
+  nodesOfThisCluster <- which(V(network.directed.weighted)$membership == thisCluster)
+  
+  for (node in 1:length(nodesOfThiscluster))
+  {
+    thisCluster <- 1
+    node <- 5
+    associatedEdges <- E(network.directed.weighted)[inc(V(network.directed.weighted)[node])]
+    allEmailsInThisCluster <- unlist(associatedEdges$email)
+    for (emailIdx in 1:length(allEmailsInThisCluster)){
+      emailId = allEmailsInThisCluster[emailIdx]
+      #emailId = "4841.eml"
+      timestamp <- c(timestamp, emailAttributes$timestamp[which(emailAttributes$email == emailId)])
+    }
+    timestamp
+  }
+}
 
 #########################################################
 #                     Start LDA
