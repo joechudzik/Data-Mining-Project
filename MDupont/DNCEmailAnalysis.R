@@ -80,7 +80,7 @@ recipientsOnly = subset(V(network.directed), V(network.directed)$outdegree == 0)
 degreeHistogram <- as.data.frame(table(V(network.directed.weighted)$degree))
 degreeHistogram$Var1 <- as.numeric(levels(degreeHistogram$Var1))[degreeHistogram$Var1]
 
-svg(filename = 'DegreeDistribution.svg', width = 10, height = 10)
+png(filename = 'DegreeDistribution.png', width = 400, height = 400)
 ggplot(degreeHistogram, aes(x=Var1, y=Freq)) + geom_point() +
   scale_x_log10(breaks=c(0,1,2,5,10,20,50,100,200,500)) + scale_y_log10(breaks=c(0,1,5,10,50,100,500,750)) +
   xlab('Degree') + ylab('Frequency') + ggtitle('Degree Distribution') + theme_bw() +
@@ -92,7 +92,7 @@ dev.off()
 strengthHistogram <- as.data.frame(table(V(network.directed.weighted)$strength))
 strengthHistogram$Var1 <- as.numeric(levels(strengthHistogram$Var1))[strengthHistogram$Var1] 
 
-svg(filename = 'StrengthDistribution.svg', width = 10, height = 10)
+png(filename = 'StrengthDistribution.png', width = 400, height = 400)
 ggplot(strengthHistogram, aes(x=Var1, y=Freq)) + geom_point() +
   scale_x_log10(breaks=c(0,1,2,5,10,20,50,100,200,500)) + scale_y_log10(breaks=c(0,1,5,10,50,100,500,750)) +
   xlab('Strength') + ylab('Frequency') + ggtitle('Strength Histogram') + theme_bw() +
@@ -101,34 +101,34 @@ ggplot(strengthHistogram, aes(x=Var1, y=Freq)) + geom_point() +
 dev.off()
 
 
-inDegreeHistogram <- as.data.frame(table(V(network.directed.weighted)$indegree))
-inDegreeHistogram$Var1 <- as.numeric(levels(inDegreeHistogram $Var1))[inDegreeHistogram $Var1] 
+#inDegreeHistogram <- as.data.frame(table(V(network.directed.weighted)$indegree))
+#inDegreeHistogram$Var1 <- as.numeric(levels(inDegreeHistogram $Var1))[inDegreeHistogram $Var1] 
 
-svg(filename = 'InDegreeDistribution.svg', width = 10, height = 10)
-ggplot(inDegreeHistogram, aes(x=Var1, y=Freq)) + geom_point() +
-  scale_x_log10(breaks=c(0,1,2,5,10,20,50,100,200,500)) + scale_y_log10(breaks=c(0,1,5,10,50,100,500,750)) +
-  xlab('InDegree') + ylab('Frequency') + ggtitle('InDegree Distribution') + theme_bw() +
-  theme(panel.border = element_blank(), panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
-dev.off()
+#png(filename = 'InDegreeDistribution.png', width = 400, height = 400)
+#ggplot(inDegreeHistogram, aes(x=Var1, y=Freq)) + geom_point() +
+#  scale_x_log10(breaks=c(0,1,2,5,10,20,50,100,200,500)) + scale_y_log10(breaks=c(0,1,5,10,50,100,500,750)) +
+#  xlab('InDegree') + ylab('Frequency') + ggtitle('InDegree Distribution') + theme_bw() +
+#  theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+#        panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
+#dev.off()
 
 
-outDegreeHistogram <- as.data.frame(table(V(network.directed.weighted)$outdegree))
-outDegreeHistogram$Var1 <- as.numeric(levels(outDegreeHistogram$Var1))[outDegreeHistogram$Var1] 
+#outDegreeHistogram <- as.data.frame(table(V(network.directed.weighted)$outdegree))
+#outDegreeHistogram$Var1 <- as.numeric(levels(outDegreeHistogram$Var1))[outDegreeHistogram$Var1] 
 
-svg(filename = 'OutDegreeDistribution.svg', width = 10, height = 10)
-ggplot(outDegreeHistogram, aes(x=Var1, y=Freq)) + geom_point() +
-  scale_x_log10(breaks=c(0,1,2,5,10,20,50,100,200,500)) + scale_y_log10(breaks=c(0,1,5,10,50,100,500,750)) +
-  xlab('OutDegree') + ylab('Frequency') + ggtitle('OutDegree Distribution') + theme_bw() +
-  theme(panel.border = element_blank(), panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
-dev.off()
+#svg(filename = 'OutDegreeDistribution.svg', width = 10, height = 10)
+#ggplot(outDegreeHistogram, aes(x=Var1, y=Freq)) + geom_point() +
+#  scale_x_log10(breaks=c(0,1,2,5,10,20,50,100,200,500)) + scale_y_log10(breaks=c(0,1,5,10,50,100,500,750)) +
+#  xlab('OutDegree') + ylab('Frequency') + ggtitle('OutDegree Distribution') + theme_bw() +
+#  theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+#        panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
+#dev.off()
 
 
 edgeWeightHistogram <- as.data.frame(table(E(network.directed.weighted)$weight))
 edgeWeightHistogram$Var1 <- as.numeric(levels(edgeWeightHistogram$Var1))[edgeWeightHistogram$Var1]
 
-svg(filename = "EdgeWeightDistribution.svg")
+png(filename = "EdgeWeightDistribution.png", height = 400, width = 400)
 ggplot(edgeWeightHistogram, aes(x=Var1, y=Freq)) + geom_point() +
   scale_x_log10(breaks=c(0,1,2,5,10,20,50,100,200,500)) + scale_y_log10(breaks=c(0,1,5,10,50,100,500,750)) +
   xlab('Edge Weight') + ylab('Frequency') + ggtitle('edgeWeight Histogram') + theme_bw() +
@@ -144,9 +144,9 @@ maxEdgeWeight <- max(E(network.directed.weighted)$weight)
 #
 # edge size
 #E(network.directed.weighted)$weight <- data.df$V3
-E(network.directed.weighted)$width <- ifelse(E(network.directed.weighted)$weight>142, 10, 
-                                             ifelse(E(network.directed.weighted)$weight>99, 5, 
-                                                    ifelse(E(network.directed.weighted)$weight>61, 2, 1)))
+#E(network.directed.weighted)$width <- ifelse(E(network.directed.weighted)$weight>142, 10, 
+#                                             ifelse(E(network.directed.weighted)$weight>99, 5, 
+#                                                    ifelse(E(network.directed.weighted)$weight>61, 2, 1)))
 E(network.directed.weighted)$width <- .5
 #E(network.directed.weighted)$color <- ifelse(E(network.directed.weighted)$weight>61, "blue", "lightgray")
 E(network.directed.weighted)$arrow.size <- .1
@@ -171,7 +171,7 @@ V(network.directed.weighted)$color <- "white"
 V(network.directed.weighted)$frame.color <- "black"
 V(network.directed.weighted)$size <- log(V(network.directed.weighted)$strength, base = 10)
 #Write to file
-svg('DNCEmailNetwork.svg', width = 10, height = 10)
+png('DNCEmailNetwork.png', width = 1600, height = 1600)
 plot(network.directed.weighted, layout = network.directed.weighted.layout)
 dev.off()
 
@@ -183,7 +183,7 @@ V(network.directed.weighted)$frame.size <- .1
 V(network.directed.weighted)$size <- 1
 
 
-svg('DNCEmailNetworkSourcesAndSinks.svg', width = 10, height = 10)
+png('DNCEmailNetworkSourcesAndSinks.png', width = 1600, height = 1600)
 plot(network.directed.weighted, layout = network.directed.weighted.layout)
 dev.off()
 
@@ -208,7 +208,7 @@ for (i in 1:length(V(network.directed.weighted))) {
                                               1)	
 }	
 V(network.directed.weighted)$label = ifelse(V(network.directed.weighted)$isTop10Metric, V(network.directed.weighted)$name, "")
-svg('DNCImportantNodes.svg', width = 10, height = 10)	
+png('DNCImportantNodes.png', width = 1600, height = 1600)	
 plot(network.directed.weighted, layout = network.directed.weighted.layout)	
 dev.off()
 
@@ -250,14 +250,14 @@ co <- layout_with_fr(network.directed.weighted, minx=minC, maxx=maxC,
                      miny=minC, maxy=maxC, grid='nogrid')
 
 
-svg(filename = "plot-force-directed.svg", width = 10, height = 10)
+png(filename = "plot-force-directed.png", width = 1600, height = 1600)
 plot(network.directed.weighted, layout=layout_with_fr, edge.arrow.size=0,
      rescale=FALSE, 
      xlim=range(co[,1]), ylim=range(co[,2]), 
      vertex.label.dist=0, vertex.label.color="green", vertext.label.cex=50000)
 dev.off()
 
-svg(filename = "plot-with-clusters.svg")
+png(filename = "plot-with-clusters.png", width = 1600, height = 1600)
 plot(network.directed.weighted, layout=layout_with_fr, edge.arrow.size=0,
      rescale=FALSE, 
      xlim=range(co[,1]), ylim=range(co[,2]))
@@ -265,7 +265,7 @@ dev.off()
 
 V(network.directed.weighted)$color <- ifelse(V(network.directed.weighted)$outdegree==0, "red", 	
                                              ifelse(V(network.directed.weighted)$indegree==0, "green", "yellow"))	
-svg(filename = "plot-with-clustersSinksSources.svg")	
+png(filename = "plot-with-clustersSinksSources.png")	
 plot(network.directed.weighted, layout=network.directed.weighted.layout)	
 dev.off()	
 
@@ -300,7 +300,7 @@ V(network.directed.weighted)$size <- ifelse(V(network.directed.weighted)$highest
 V(network.directed.weighted)$frame.color <- V(network.directed.weighted)$membership
 ''
 V(network.directed.weighted)$label = ifelse(V(network.directed.weighted)$highestDegreeSubgraphNode, paste(V(network.directed.weighted)$membership, ", ", V(network.directed.weighted)$name), "")
-svg(filename = "plot-with-clustersSinksSourcesMaxStrengthHighlighted.svg")	
+png(filename = "plot-with-clustersSinksSourcesMaxStrengthHighlighted.png" width = 1600, height = 1600)	
 plot(network.directed.weighted, layout=network.directed.weighted.layout)	
 dev.off()	
 V(network.directed.weighted)$label = ""
