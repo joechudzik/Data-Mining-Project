@@ -14,6 +14,7 @@ library(tidytext)
 library(dplyr)
 library(ggplot2)
 library(scales)
+library(broom)
 
 emailEdges <-  read_excel("EmailDataset.xlsx", sheet = "EdgeList")
 emailAttributes <- read_excel("EmailDataset.xlsx", sheet = "Attributes")
@@ -58,6 +59,7 @@ top10MetricVertices <- unique(c(top10DegreeVertices, top10StrengthVertices, top1
 V(network.directed.weighted)$isTop10Degree      <- V(network.directed.weighted) %in% top10Degree
 V(network.directed.weighted)$isTop10Strength    <- V(network.directed.weighted) %in% top10Strength
 V(network.directed.weighted)$isTop10Betweenness <- V(network.directed.weighted) %in% top10Betweenness
+V(network.directed.weighted)$isTop10Metric      <- V(network.directed.weighted) %in% top10CentralityIndices
 
 tidy(top10DegreeVertices)
 tidy(top10StrengthVertices)
@@ -159,6 +161,7 @@ V(network.directed.weighted)$size <- log(V(network.directed.weighted)$degree, 10
 # node label
 V(network.directed.weighted)$label <- ifelse(V(network.directed.weighted)$degree>100, V(network.directed.weighted)$name, "")
 V(network.directed.weighted)$label <- ""
+V(network.directed.weighted)$label.cex <- .4
 
 ##########################################################################
 
@@ -195,7 +198,8 @@ dev.off()
 #dev.off()
 
 
-V(network.directed.weighted)$color = ifelse(V(network.directed.weighted)$name %in% top10MetricVertices, "white", "black")	
+V(network.directed.weighted)$color = ifelse(V(network.directed.weighted)$name %in% top10MetricVertices, "white", "black")
+V(network.directed.weighted)$frame.color = "black"
 V(network.directed.weighted)$size = ifelse(V(network.directed.weighted)$name %in% top10MetricVertices, 3, 1)  	
 for (i in 1:length(V(network.directed.weighted))) {	
   V(network.directed.weighted)$color[i] = rgb(ifelse(V(network.directed.weighted)$isTop10Degree[i], 1, 0),	
@@ -203,12 +207,13 @@ for (i in 1:length(V(network.directed.weighted))) {
                                               ifelse(V(network.directed.weighted)$isTop10Betweenness[i], 1, 0),	
                                               1)	
 }	
+V(network.directed.weighted)$label = ifelse(V(network.directed.weighted)$isTop10Metric, V(network.directed.weighted)$name, "")
 svg('DNCImportantNodes.svg', width = 10, height = 10)	
 plot(network.directed.weighted, layout = network.directed.weighted.layout)	
 dev.off()
 
 V(network.directed.weighted)$size = 1
-
+V(network.directed.weighted)$label = ""
 #########################################################
 #                      Cluster Analysis
 #########################################################
@@ -293,10 +298,12 @@ V(network.directed.weighted)$color <- ifelse(V(network.directed.weighted)$outdeg
                                              ifelse(V(network.directed.weighted)$indegree==0, "green", "yellow"))
 V(network.directed.weighted)$size <- ifelse(V(network.directed.weighted)$highestDegreeSubgraphNode, 3, 1)
 V(network.directed.weighted)$frame.color <- V(network.directed.weighted)$membership
+''
+V(network.directed.weighted)$label = ifelse(V(network.directed.weighted)$highestDegreeSubgraphNode, paste(V(network.directed.weighted)$membership, ", ", V(network.directed.weighted)$name), "")
 svg(filename = "plot-with-clustersSinksSourcesMaxStrengthHighlighted.svg")	
 plot(network.directed.weighted, layout=network.directed.weighted.layout)	
 dev.off()	
-
+V(network.directed.weighted)$label = ""
 ##Extra New Stuff
 
 outlierIndices <- which(V(network.directed.weighted)$membership == 0)
