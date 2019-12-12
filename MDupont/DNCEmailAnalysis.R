@@ -483,7 +483,7 @@ for (j in 1:length(com$csize))
     coord_flip() +
     scale_x_reordered() + 
     labs(title=paste("cluster ", j)) +
-    ggsave(paste("Images/cluster_",j,".png"))
+    ggsave(paste("Images/cluster_",j,".png", sep = ""))
   # output gamma
   #email.gamma <- tidy(ap_lda, matrix="gamma")
   #gamma.df <- as.data.frame(email.gamma)
