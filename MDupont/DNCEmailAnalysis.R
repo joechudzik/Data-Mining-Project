@@ -18,6 +18,7 @@ library(broom)
 
 emailEdges <-  read_excel("EmailDataset.xlsx", sheet = "EdgeList")
 emailAttributes <- read_excel("EmailDataset.xlsx", sheet = "Attributes")
+stopwords.df <- read.table('stopwords_en.txt', stringsAsFactors = FALSE)
 
 wd <- getwd()
 wdout <- paste(wd, "Images", sep = "/")
@@ -331,101 +332,159 @@ for (thisCluster in 1:length(numberClusters))
   }
 }
 
-#########################################################
-#                     Start LDA
-#########################################################
+##########################################################################
+#                     Overall topic modeling - LDA
+##########################################################################
 
 emails <- emailAttributes
-halfEmails <- emails[sample(1:nrow(emails), 11228, replace=FALSE),]  # get a random sample of half of the normal data
-emailbodies <- halfEmails$body
-docs <- Corpus(VectorSource(emailbodies)) # create corpus from vector of email bodies
-writeLines(as.character(docs[[2]]))       # inspect particular document in corpus
+
+emails <- na.omit(emails)
+remove <- which(nchar(emails$body) == 0)
+if (0 != length(remove)) {
+  emails <- emails[-remove,]
+}
+
+# convert to corpus
+names(emails) = c("doc_id", "subject", "text")
+emails$doc_id = as.character(emails$doc_id)
+emails <- as.data.frame(emails)
+docs <- Corpus(DataframeSource(emails))
 
 # removing potentially problematic symbols
 toSpace <- content_transformer(function(x, pattern) { return (gsub(pattern, ' ', x))})
 docs <- tm_map(docs, toSpace, '-')
 docs <- tm_map(docs, toSpace, '\'')
 docs <- tm_map(docs, toSpace, "\"")
+docs <- tm_map(docs, toSpace, '\\.')
+docs <- tm_map(docs, toSpace, ':')
+docs <- tm_map(docs, toSpace, '@')
+docs <- tm_map(docs, toSpace, '/')
+docs <- tm_map(docs, toSpace, '”')
+docs <- tm_map(docs, toSpace, '“')
+docs <- tm_map(docs, toSpace, '‘')
+docs <- tm_map(docs, toSpace, '’')
 
 # remove punctuation
 docs <- tm_map(docs, removePunctuation)
 #Strip digits
 docs <- tm_map(docs, removeNumbers)
+# to lower case
+docs <- tm_map(docs, tolower)
 #remove stopwords
-docs <- tm_map(docs, removeWords, stopwords('english'))
+docs <- tm_map(docs, removeWords, stopwords.df[[1]])
 #remove whitespace
 docs <- tm_map(docs, stripWhitespace)
-#Good practice to check every now and then
-writeLines(as.character(docs[[30]]))
 #Stem document
-docs <- tm_map(docs,stemDocument)
+docs <- tm_map(docs, stemDocument, 'english')
 
-
-#Create document-term matrix
-dtm <- DocumentTermMatrix(docs)
-#collapse matrix by summing over columns
-freq <- colSums(as.matrix(dtm))
-#length should be total number of terms
-length(freq)
-#create sort order (descending)
-ord <- order(freq,decreasing=TRUE)
-#List all terms in decreasing order of freq and write to disk
-freq[ord]
-#write.csv(freq[ord],'/Users/Joey/Desktop/word_freq.csv')
-
-
-# R threw some hiccups. fixing error from above. (dont know how to explain it but error is reproducable without running next 2 lines)
-raw.sum <- apply(dtm, 1, FUN=sum) # sum each row of the table
-dtm <- dtm[raw.sum!=0,] # delete all raws with 0
-
-#Run LDA using Gibbs sampling
-ldaOut <-LDA(dtm, k=4, control = list(seed=1234))
-emails_lda <- ldaOut
-
-emails_topics <- tidy(emails_lda, matrix = "beta")
-emails_topics
-
-# gives us the top n words for each topic
-#   normally show 20 words per topic; change to ... top_n(20, beta) ...
-# 
-emails_top_terms <- emails_topics %>%
+# create LDA model
+topic.dtm <- DocumentTermMatrix(docs)
+ui <- unique(topic.dtm$i)
+topic.dtm.ui <- topic.dtm[ui, ]
+ap_lda <- LDA(topic.dtm.ui, k = 4, control = list(seed = 1234))
+# get term beta information
+ap_topics <- tidy(ap_lda, matrix = "beta")
+ap_top_terms <- ap_topics %>%
   group_by(topic) %>%
   top_n(20, beta) %>%
   ungroup() %>%
   arrange(topic, -beta)
-
-# take the top terms and make a pretty visualization of the distribution above
-#   he wants to see visualizations like this in the project
-#   normally show 20 words per topic; gives a better qual observation of whats happening
-emails_top_terms %>%
+# plot top term
+ap_top_terms %>%
   mutate(term = reorder_within(term, beta, topic)) %>%
   ggplot(aes(term, beta, fill = factor(topic))) +
   geom_col(show.legend = FALSE) +
   facet_wrap(~ topic, scales = "free") +
   coord_flip() +
   scale_x_reordered()
+# write gamma information into files
+#email.gamma <- tidy(ap_lda, matrix="gamma")
+#gamma.df <- as.data.frame(email.gamma)
+#write.csv(gamma.df, 'overall_gamma.csv')
 
-# side-by-side comparison of the probability of each word in a topic
-# 
-beta_spread <- emails_topics %>%
-  mutate(topic = paste0("topic", topic)) %>%
-  spread(topic, beta) %>%
-  filter(topic1 > .001 | topic2 > .001) %>%
-  mutate(log_ratio = log2(topic2 / topic1))
+##################################################################################
+#                     cluster topic modeling - LDA
+##################################################################################
 
-beta_spread
+data.graph <- graph.data.frame(data.df)
 
-# gives the probability of a topic within a document
-#
-emails_documents <- tidy(emails_lda, matrix = "gamma")
-emails_documents
+# create 12 clusters for the main subgraph
+graph.clusters <- clusters(data.graph)
+cluster.vector <- graph.clusters$membership[which(graph.clusters$membership==1)]
+cluster.vector <- names(cluster.vector)
+graph.sub <- subgraph(data.graph, cluster.vector)
+com <- cluster_spinglass(graph.sub, spins=12)
 
-# the specific words and their frequencies within a document
-#
-tidy(halfEmails) %>%
-  filter(document == 6) %>%
-  arrange(desc(count))
+# clean data
+emailbodies <- emails$body
+docs <- Corpus(VectorSource(emailbodies)) # create corpus from vector of email bodies
+toSpace <- content_transformer(function(x, pattern) { return (gsub(pattern, ' ', x))})
+docs <- tm_map(docs, toSpace, '-')
+docs <- tm_map(docs, toSpace, "\"")
+docs <- tm_map(docs, toSpace, '\\.')
+docs <- tm_map(docs, toSpace, ':')
+docs <- tm_map(docs, toSpace, '@')
+docs <- tm_map(docs, toSpace, '/')
+docs <- tm_map(docs, toSpace, '”')
+docs <- tm_map(docs, toSpace, '“')
+docs <- tm_map(docs, toSpace, '‘')
+docs <- tm_map(docs, toSpace, '’')
+docs <- tm_map(docs, removePunctuation)
+docs <- tm_map(docs, removeNumbers)
+docs <- tm_map(docs, tolower)
+docs <- tm_map(docs, removeWords, stopwords.df[[1]])
+docs <- tm_map(docs, stripWhitespace)
+docs <- tm_map(docs, stemDocument, 'english')
+email.topic <- data.frame(text = sapply(docs, paste, collapse = " "), stringsAsFactors = FALSE)
+email.topic <- cbind(email.df$index, email.topic)
+colnames(email.topic) <- c("doc_id", "text")
+email.topic$doc_id <- as.character(email.topic$doc_id)
+email.topic <- na.omit(email.topic)
+remove <- which(nchar(email.topic$text) == 0)
+email.topic <- email.topic[-remove,]
 
-######################################################################
-#                   Attempt to graph topics in clusters
-######################################################################
+# loop for the 12 clusters
+for (j in 1:length(com$csize))
+{
+  # create data frame
+  cluster.vector <- com$names[which(com$membership==j)]
+  topic.df <- NULL
+  for (i in 1:nrow(data.df))
+  {
+    if (!(data.df$node1[i] %in% cluster.vector))
+      next()
+    if (!(data.df$node2[i] %in% cluster.vector))
+      next()
+    email.list <- strsplit(data.df$emails[i], ',')
+    topic.df <- rbind(topic.df, email.topic[email.topic$doc_id%in%email.list[[1]], ])
+  }
+  
+  # create LDA model
+  topic.dtm <- DocumentTermMatrix(Corpus(DataframeSource(topic.df)))
+  rowSum <- apply(topic.dtm , 1, sum)
+  topic.dtm <- topic.dtm[rowSum> 0, ]
+  ap_lda <- LDA(topic.dtm, k = 2, control = list(seed = 1234))
+  # get beta information for terms
+  ap_topics <- tidy(ap_lda, matrix = "beta")
+  ap_top_terms <- ap_topics %>%
+    group_by(topic) %>%
+    top_n(10, beta) %>%
+    ungroup() %>%
+    arrange(topic, -beta)
+  # plot top terms
+  ap_top_terms %>%
+    mutate(term = reorder_within(term, beta, topic)) %>%
+    ggplot(aes(term, beta, fill = factor(topic))) +
+    geom_col(show.legend = FALSE) +
+    facet_wrap(~ topic, scales = "free") +
+    coord_flip() +
+    scale_x_reordered() + 
+    labs(title=paste("cluster ", j)) +
+    ggsave(paste("image/cluster_",j,".png"))
+  # output gamma
+  #email.gamma <- tidy(ap_lda, matrix="gamma")
+  #gamma.df <- as.data.frame(email.gamma)
+  #write.csv(gamma.df, paste('cluster', j, '_gamma.csv'))
+}
+
+#####################################################################################
