@@ -16,9 +16,11 @@ library(ggplot2)
 library(scales)
 library(broom)
 
-emailEdges <-  read_excel("EmailDataset.xlsx", sheet = "EdgeList")
-emailAttributes <- read_excel("EmailDataset.xlsx", sheet = "Attributes")
-stopwords.df <- read.table('stopwords_en.txt', stringsAsFactors = FALSE)
+emailEdges <-  read.csv("./data/EdgeList.csv", stringsAsFactors = FALSE)
+emailAttributes <- read.csv("./data/Attributes.csv", stringsAsFactors = FALSE)
+network.df <- read.csv('./data/network.csv', stringsAsFactors = FALSE)
+emails.df <- read.csv('./data/emails.csv', stringsAsFactors = FALSE)
+stopwords.df <- read.table('./data/stopwords_en.txt', stringsAsFactors = FALSE)
 
 wd <- getwd()
 wdout <- paste(wd, "Images", sep = "/")
@@ -301,7 +303,7 @@ V(network.directed.weighted)$size <- ifelse(V(network.directed.weighted)$highest
 V(network.directed.weighted)$frame.color <- V(network.directed.weighted)$membership
 ''
 V(network.directed.weighted)$label = ifelse(V(network.directed.weighted)$highestDegreeSubgraphNode, paste(V(network.directed.weighted)$membership, ", ", V(network.directed.weighted)$name), "")
-png(filename = "plot-with-clustersSinksSourcesMaxStrengthHighlighted.png" width = 1600, height = 1600)	
+png(filename = "plot-with-clustersSinksSourcesMaxStrengthHighlighted.png", width = 1600, height = 1600)	
 plot(network.directed.weighted, layout=network.directed.weighted.layout)	
 dev.off()	
 V(network.directed.weighted)$label = ""
@@ -406,7 +408,7 @@ ap_top_terms %>%
 #                     cluster topic modeling - LDA
 ##################################################################################
 
-data.graph <- graph.data.frame(data.df)
+data.graph <- graph.data.frame(network.df)
 
 # create 12 clusters for the main subgraph
 graph.clusters <- clusters(data.graph)
@@ -416,7 +418,7 @@ graph.sub <- subgraph(data.graph, cluster.vector)
 com <- cluster_spinglass(graph.sub, spins=12)
 
 # clean data
-emailbodies <- emails$body
+emailbodies <- emails.df$body
 docs <- Corpus(VectorSource(emailbodies)) # create corpus from vector of email bodies
 toSpace <- content_transformer(function(x, pattern) { return (gsub(pattern, ' ', x))})
 docs <- tm_map(docs, toSpace, '-')
@@ -436,7 +438,8 @@ docs <- tm_map(docs, removeWords, stopwords.df[[1]])
 docs <- tm_map(docs, stripWhitespace)
 docs <- tm_map(docs, stemDocument, 'english')
 email.topic <- data.frame(text = sapply(docs, paste, collapse = " "), stringsAsFactors = FALSE)
-email.topic <- cbind(email.df$index, email.topic)
+#email.id <- str_split_fixed(emails$doc_id, '\\.', 2)
+email.topic <- cbind(emails.df$index, email.topic)
 colnames(email.topic) <- c("doc_id", "text")
 email.topic$doc_id <- as.character(email.topic$doc_id)
 email.topic <- na.omit(email.topic)
@@ -449,13 +452,13 @@ for (j in 1:length(com$csize))
   # create data frame
   cluster.vector <- com$names[which(com$membership==j)]
   topic.df <- NULL
-  for (i in 1:nrow(data.df))
+  for (i in 1:nrow(network.df))
   {
-    if (!(data.df$node1[i] %in% cluster.vector))
+    if (!(network.df$node1[i] %in% cluster.vector))
       next()
-    if (!(data.df$node2[i] %in% cluster.vector))
+    if (!(network.df$node2[i] %in% cluster.vector))
       next()
-    email.list <- strsplit(data.df$emails[i], ',')
+    email.list <- strsplit(network.df$emails[i], ',')
     topic.df <- rbind(topic.df, email.topic[email.topic$doc_id%in%email.list[[1]], ])
   }
   
@@ -480,7 +483,7 @@ for (j in 1:length(com$csize))
     coord_flip() +
     scale_x_reordered() + 
     labs(title=paste("cluster ", j)) +
-    ggsave(paste("image/cluster_",j,".png"))
+    ggsave(paste("Images/cluster_",j,".png"))
   # output gamma
   #email.gamma <- tidy(ap_lda, matrix="gamma")
   #gamma.df <- as.data.frame(email.gamma)
