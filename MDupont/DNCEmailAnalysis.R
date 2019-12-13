@@ -23,7 +23,7 @@ emails.df <- read.csv('./data/emails.csv', stringsAsFactors = FALSE)
 stopwords.df <- read.table('./data/stopwords_en.txt', stringsAsFactors = FALSE)
 
 wd <- getwd()
-wdout <- paste(wd, "Images", sep = "/")
+wdout <- paste(wd, "data", sep = "/")
 setwd(wdout)
 set.seed(1234)
 
@@ -475,7 +475,7 @@ for (j in 1:length(com$csize))
     coord_flip() +
     scale_x_reordered() + 
     labs(title=paste("cluster ", j)) +
-    ggsave(paste("Images/cluster_",j,".png", sep = ""))
+    ggsave(paste("data/cluster_",j,".png", sep = ""))
   # output gamma
   #email.gamma <- tidy(ap_lda, matrix="gamma")
   #gamma.df <- as.data.frame(email.gamma)
