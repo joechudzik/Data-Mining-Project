@@ -307,24 +307,24 @@ highestStrengthOutlier <- which(V(network.directed.weighted)$strength == highest
 associatedEdges <- E(network.directed.weighted)[inc(V(network.directed.weighted)[strength == highestStrengthOfOutlier])]
 associatedEdges$email
 
-for (thisCluster in 1:length(numberClusters))
-{
-  nodesOfThisCluster <- which(V(network.directed.weighted)$membership == thisCluster)
-  
-  for (node in 1:length(nodesOfThiscluster))
-  {
-    thisCluster <- 1
-    node <- 5
-    associatedEdges <- E(network.directed.weighted)[inc(V(network.directed.weighted)[node])]
-    allEmailsInThisCluster <- unlist(associatedEdges$email)
-    for (emailIdx in 1:length(allEmailsInThisCluster)){
-      emailId = allEmailsInThisCluster[emailIdx]
-      #emailId = "4841.eml"
-      timestamp <- c(timestamp, emailAttributes$timestamp[which(emailAttributes$email == emailId)])
-    }
-    timestamp
-  }
-}
+#for (thisCluster in 1:length(numberClusters))
+#{
+#  nodesOfThisCluster <- which(V(network.directed.weighted)$membership == thisCluster)
+#  
+#  for (node in 1:length(nodesOfThiscluster))
+#  {
+#    thisCluster <- 1
+#    node <- 5
+#    associatedEdges <- E(network.directed.weighted)[inc(V(network.directed.weighted)[node])]
+#    allEmailsInThisCluster <- unlist(associatedEdges$email)
+#    for (emailIdx in 1:length(allEmailsInThisCluster)){
+#      emailId = allEmailsInThisCluster[emailIdx]
+#      #emailId = "4841.eml"
+#      timestamp <- c(timestamp, emailAttributes$timestamp[which(emailAttributes$email == emailId)])
+#    }
+#    timestamp
+#  }
+#}
 
 ##########################################################################
 #                     Overall topic modeling - LDA
